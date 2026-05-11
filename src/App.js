@@ -73,6 +73,9 @@ export default function App() {
     theme: "", cues: "", submitted: false, reflection: "",
   });
   const [formError, setFormError] = useState("");
+  const [showImport, setShowImport] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState("");
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions)); } catch {}
@@ -122,6 +125,21 @@ export default function App() {
     showToast("Saturday video logged! 📹");
     setVideoForm({ date: new Date().toISOString().split("T")[0], theme: "", cues: "", submitted: false, reflection: "" });
     setActiveTab("videos");
+  }
+
+  function handleImport() {
+    try {
+      const parsed = JSON.parse(importText.trim());
+      if (!Array.isArray(parsed)) throw new Error("Not an array");
+      setSessions(parsed.sort((a, b) => new Date(a.date) - new Date(b.date)));
+      setShowImport(false);
+      setImportText("");
+      setImportError("");
+      showToast("Sessions imported! 🎉");
+      setActiveTab("sessions");
+    } catch {
+      setImportError("Invalid data — make sure you copied the full text correctly.");
+    }
   }
 
   return (
@@ -174,7 +192,22 @@ export default function App() {
           <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
             {MILESTONES.map(m => {
               const on = totalMins >= m.mins;
-              return (
+              function handleImport() {
+    try {
+      const parsed = JSON.parse(importText.trim());
+      if (!Array.isArray(parsed)) throw new Error("Not an array");
+      setSessions(parsed.sort((a, b) => new Date(a.date) - new Date(b.date)));
+      setShowImport(false);
+      setImportText("");
+      setImportError("");
+      showToast("Sessions imported! 🎉");
+      setActiveTab("sessions");
+    } catch {
+      setImportError("Invalid data — make sure you copied the full text correctly.");
+    }
+  }
+
+  return (
                 <span key={m.label} style={{
                   padding: "2px 8px", borderRadius: 20, fontSize: 10,
                   background: on ? "#2a4a2a" : "#141f18",
@@ -314,7 +347,46 @@ export default function App() {
         )}
 
       </div>
+      {showImport && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)",
+          zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 16,
+        }}>
+          <div style={{ background: "#1a2e20", border: "1px solid #2a4030", borderRadius: 12, padding: 24, maxWidth: 500, width: "100%" }}>
+            <h3 style={{ margin: "0 0 8px", color: "#8FAF8F", fontSize: 16 }}>Import Sessions 📥</h3>
+            <p style={{ margin: "0 0 12px", color: "#6b8f6b", fontSize: 13 }}>Paste your session data from another device:</p>
+            <textarea
+              value={importText}
+              onChange={e => { setImportText(e.target.value); setImportError(""); }}
+              rows={6}
+              placeholder='Paste your data here — starts with [{"id":...'
+              style={{ ...inp, resize: "vertical", marginBottom: 8 }}
+            />
+            {importError && <p style={{ color: "#e57373", fontSize: 12, margin: "0 0 8px" }}>⚠️ {importError}</p>}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={handleImport} style={{
+                flex: 1, background: "#4a7a4a", border: "none", borderRadius: 8,
+                color: "#d4e6d4", padding: "12px", fontSize: 14, cursor: "pointer",
+              }}>Import</button>
+              <button onClick={() => { setShowImport(false); setImportText(""); setImportError(""); }} style={{
+                background: "none", border: "1px solid #2a4030", borderRadius: 8,
+                color: "#6b8f6b", padding: "12px 16px", fontSize: 14, cursor: "pointer",
+              }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "0 16px 16px", textAlign: "center" }}>
+        <button onClick={() => setShowImport(true)} style={{
+          background: "none", border: "1px solid #2a4030", borderRadius: 8,
+          color: "#4a6a4a", padding: "8px 20px", fontSize: 12, cursor: "pointer",
+        }}>📥 Import sessions from another device</button>
+      </div>
+
       <style>{`input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webkit-calendar-picker-indicator{filter:invert(0.5)}`}</style>
     </div>
   );
 }
+// import button added below
